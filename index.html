@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Vela Cumpleaños Interactiva</title>
+
+<style>
+body {
+  margin: 0;
+  background: #fff3e0;
+  font-family: Arial, sans-serif;
+}
+
+/* MENSAJES */
+.message {
+  position: absolute;
+  top: 12%;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 42px;
+  font-weight: bold;
+  color: #FF9800;
+  text-shadow: 0 0 10px rgba(255, 152, 0, 0.6);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.wrapper {
+  position: absolute;
+  left: 50%;
+  top: 70%;
+  transform: scale(1.5) translate(-50%, -50%);
+}
+
+.floor {
+  width: 350px;
+  height: 5px;
+  background: #673C63;
+  box-shadow: 0 2px 5px #111;
+}
+
+.candles {
+  position: relative;
+  width: 250px;
+  height: 150px;
+}
+
+/* VELA */
+.candle {
+  position: absolute;
+  left: 50%;
+  top: 40%;
+  width: 42px;
+  height: 60px;
+  background: #fff;
+  border: 3px solid #673C63;
+  border-bottom: 0;
+  transform: translateX(-50%);
+  box-shadow: 0 0 25px rgba(255,152,0,0.7);
+}
+
+/* MECHA */
+.stick {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 3px;
+  height: 12px;
+  background: #673C63;
+  transform: translate(-50%, -100%);
+}
+
+/* LLAMA */
+.fire {
+  position: absolute;
+  top: -18px;
+  left: 50%;
+  width: 16px;
+  height: 20px;
+  background: #FF9800;
+  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+  transform: translateX(-50%);
+  animation: fire 0.8s infinite alternate;
+}
+
+/* LUZ */
+.light {
+  position: absolute;
+  top: -40px;
+  left: 50%;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,200,120,0.4);
+  transform: translateX(-50%);
+  animation: glow 2s infinite;
+}
+
+/* APAGADA */
+.off .fire,
+.off .light {
+  opacity: 0;
+}
+
+@keyframes fire {
+  from { transform: translateX(-50%) scale(1); }
+  to { transform: translateX(-50%) scale(1.15); }
+}
+
+@keyframes glow {
+  from { transform: translateX(-50%) scale(1); opacity: 0.6; }
+  to { transform: translateX(-50%) scale(1.6); opacity: 0; }
+}
+</style>
+</head>
+
+<body>
+
+<div class="message" id="instruction">🗣️ Sopla al micrófono</div>
+<div class="message hidden" id="birthday">🎉 Feliz cumpleaños 🎉</div>
+
+<div class="wrapper">
+  <div class="candles">
+    <div class="candle" id="candle">
+      <div class="stick"></div>
+      <div class="fire"></div>
+      <div class="light"></div>
+    </div>
+  </div>
+  <div class="floor"></div>
+</div>
+
+<script>
+const candle = document.getElementById("candle");
+const instruction = document.getElementById("instruction");
+const birthday = document.getElementById("birthday");
+
+let audioContext;
+let analyser;
+let mic;
+let dataArray;
+
+async function startMic() {
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  audioContext = new AudioContext();
+  analyser = audioContext.createAnalyser();
+  mic = audioContext.createMediaStreamSource(stream);
+  mic.connect(analyser);
+  analyser.fftSize = 256;
+  dataArray = new Uint8Array(analyser.frequencyBinCount);
+  listen();
+}
+
+function listen() {
+  analyser.getByteFrequencyData(dataArray);
+  let volume = dataArray.reduce((a, b) => a + b) / dataArray.length;
+
+  if (volume > 50) { // sensibilidad del soplido
+    candle.classList.add("off");
+    instruction.classList.add("hidden");
+    birthday.classList.remove("hidden");
+    return;
+  }
+
+  requestAnimationFrame(listen);
+}
+
+// activar micro con primer toque (requisito móvil)
+document.body.addEventListener("click", () => {
+  if (!audioContext) startMic();
+}, { once: true });
+</script>
+
+</body>
+</html>
